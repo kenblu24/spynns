@@ -93,35 +93,39 @@ class Network:
         return self.runtil(self.time + t, **kwargs)
 
     def runtil(self, t, clear_histories=True):
-        if clear_histories:
+        if clear_histories:  # by default, clear history to prevent memory leak
             self.clear_histories()
-        if t < self.time:
+        if t < self.time:  # sanity check. Only move forward in time...
             raise ValueError(f"Cannot reverse time. (called with t={t}, which is before current time {self.net.time})")
         while True:
-            if self.queue:
+            if self.queue:  # if queue is not empty
+                # get the time of next spike
                 t_next = min(self.queue, key=lambda s: s.time).time
             else:
                 break
-            if t_next < t:
+            if t_next < t:  # only continue up until end time `t`
+                # gather spikes that arrive at t_next
                 spikes = self.collect_at(self.queue, t_next)
             else:
                 break
-
+            # -------
             self.time = t_next  # SET NETWORK TIME
-
+            # -------
             nodes_to_update = set()  # avoid duplicate update calls
             for spike in spikes:
                 nodes_to_update.add(spike.destination)  # process them later
                 spike.destination.intake.append(spike)  # add spike to node
                 self.queue.remove(spike)
 
+            # process them now
             for node in nodes_to_update:
-                node.step_integrate()
-                node.clear_intake()
+                node.step_integrate()  # integrate
+                node.clear_intake()  # clear
             for node in nodes_to_update:
-                node.step_fire()
-
-        self.time = t
+                node.step_fire()  # fire if conditions are met
+        # -------
+        self.time = t  # set the network time even if no spikes
+        # -------
 
     def clear_histories(self):
         for node in self.nodeset:
@@ -135,10 +139,17 @@ class Network:
 
     @staticmethod
     def collect_at(queue, t):
+        # collect spikes at a certain time
         return [s for s in queue if s.time == t]
 
     def schedule(self, *spikes):
         self.queue += spikes
+
+    def connect(self, parent, child, weight, delay, **kwargs):
+        edge = Edge(self, parent, child, weight, delay, **kwargs)
+        parent.output_edges.append(edge)
+        return edge
+
 
 
 def charges(nodes):
@@ -157,8 +168,8 @@ def vectors(nodes):
     return [node.t_fires for node in nodes]
 
 
-def _connect(parent, child, weight=0, delay=0, **kwargs):
-    edge = Edge(child, weight, delay, **kwargs)
+def connect(net, parent, child, weight, delay, **kwargs):
+    edge = Edge(net, parent, child, weight, delay, **kwargs)
     parent.output_edges.append(edge)
     return edge
 

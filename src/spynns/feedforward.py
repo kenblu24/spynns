@@ -1,8 +1,8 @@
 from .network import connect, make_layer
 
 # typing
-# from .Edge import Edge
-from .Node import Node
+# from .edge import Edge
+from .node import Node
 
 
 def connect_multiple(parent: Node, children: list[Node]):
