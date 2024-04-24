@@ -13,7 +13,8 @@ class Node:
         self.output_edges = []  # outgoing connections
         self.history = []  # times of fires [-1] is most recent fire.
         # history may be wiped by external methods.
-        self._t_lastfire = None  # but this should never be cleared (would break refractory)
+        self._t_lastfire: float | None = None  # but this should never be cleared (would break refractory)
+        self._t_lastcheck = 0
 
         self.callback_prestep_fire = lambda x: None
         self.callback_prestep_integrate = lambda x: None
@@ -38,14 +39,16 @@ class Node:
 
     def step_integrate(self):
         self.callback_prestep_integrate(self)
-        # apply leak. charge = 2^(-t/tau) where t is time since last fire.
+        # apply leak. charge = 2^(-t/tau) where t is elapsed time.
         if self.leak is not None:
-            self.charge = self.charge * 2 ** (-1 / (2 ** self.leak))
+            dt = self.net.time - self._t_lastcheck  # elapsed time
+            self.charge = self.charge * 2 ** (-dt / (2 ** self.leak))
         # add/integrate charge from spikes in intake
         self.charge += sum([spike.amplitude for spike in self.intake])
         # this function does not clear the intake or consume the spikes.
         # that is the responsibility of the caller (i.e. spynns.network.runtil)
         # this allows for inheritance to easily extend functionality here.
+        self._t_lastcheck = self.net.time
 
     def clear_intake(self):
         self.intake = []

@@ -16,7 +16,7 @@ class Edge:
         self.net.schedule(Spike(
             amplitude=self.weight,
             time=self.net.time + self.delay,
-            source=self.parent,
+            source=self,
             destination=self.child,
         ))
 

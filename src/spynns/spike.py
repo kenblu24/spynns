@@ -1,8 +1,12 @@
-from collections import namedtuple
+from typing import Any, NamedTuple, TYPE_CHECKING
 
-Spike = namedtuple('Spike', [
-	'amplitude',
-	'time',
-	'source',
-	'destination',
-])
+# typing:
+# if TYPE_CHECKING:
+#     from .node import Node
+
+
+class Spike(NamedTuple):
+    amplitude: float
+    time: float
+    source: Any
+    destination: Any

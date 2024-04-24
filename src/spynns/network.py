@@ -174,8 +174,8 @@ def connect(net, parent, child, weight, delay, **kwargs):
     return edge
 
 
-def make_layer(n) -> list[Node]:
-    return [Node() for _ in range(n)]
+def make_layer(n, node_type=Node) -> list[Node]:
+    return [node_type() for _ in range(n)]
 
 
 def network_from_json(j: dict) -> (dict[Node], list[Node], list[Node]):
